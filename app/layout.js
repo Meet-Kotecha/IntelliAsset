@@ -1,8 +1,8 @@
 import './globals.css'
 import { Providers } from './providers'
 import { Toaster } from 'sonner'
-import { GeistSans } from 'geist/font/sans'   // ← Add this
-import { GeistMono } from 'geist/font/mono'   // ← Add this (optional)
+import { GeistSans } from 'geist/font/sans'
+import { GeistMono } from 'geist/font/mono'
 
 export const metadata = {
   title: 'IntelliAsset — AI-Powered Asset Management',
