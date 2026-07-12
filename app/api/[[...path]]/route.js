@@ -1,4 +1,4 @@
-"import { NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 import { v4 as uuid } from 'uuid';
 import { getDb } from '@/lib/mongodb';
 import { computeAssetHealth, enrichAssets } from '@/lib/predictive';
@@ -284,4 +284,3 @@ export const POST = handler;
 export const PUT = handler;
 export const PATCH = handler;
 export const DELETE = handler;
-"
