@@ -33,7 +33,7 @@ async function log(action, entityType, entityId, userId, meta = {}) {
  */
 function checkApiPermission(user, route, method) {
   // Public routes that don't require authentication
-  const publicRoutes = ['auth/login', 'auth/signup', 'auth/logout'];
+  const publicRoutes = ['/auth/login', '/auth/signup', '/auth/logout'];
   const normalizedRoute = route.startsWith('/api') ? route.slice(4) : route;
   if (publicRoutes.includes(normalizedRoute)) return true;
 
@@ -51,7 +51,6 @@ async function handler(request, { params }) {
     const body = ['POST', 'PUT', 'PATCH', 'DELETE'].includes(method) ? await request.json().catch(() => ({})) : {};
 
     // ===== AUTHENTICATION & AUTHORIZATION =====
-    // Skip auth for public routes
     const publicRoutes = ['auth/login', 'auth/signup', 'auth/logout'];
     if (!publicRoutes.includes(route)) {
       const user = getSession(request);
@@ -72,25 +71,24 @@ async function handler(request, { params }) {
       if (!email || !password || !name) return json({ error: 'Missing fields' }, 400);
       const existing = await db.collection('users').findOne({ email });
       if (existing) return json({ error: 'Email already registered' }, 400);
-      const user = { id: uuid(), email, password, name, role: 'Employee', departmentId: null, avatar: '👤' };
+      const user = { id: uuid(), email, password, name, role: 'Employee', departmentId: null, avatar: '👤', status: 'Active' };
       await db.collection('users').insertOne(user);
       await log('USER_SIGNUP', 'User', user.id, user.id);
       const { password: _, _id, ...safe } = user;
       return json({ user: safe });
     }
 
-if (route === 'auth/login' && method === 'POST') {
-  const { email, password } = body;
-  const user = await db.collection('users').findOne({ email, password });
-  if (!user) return json({ error: 'Invalid credentials' }, 401);
-  if (user.status !== 'Active') return json({ error: 'Account is deactivated. Contact admin.' }, 403);
-  await log('USER_LOGIN', 'User', user.id, user.id);
-  const { password: _, _id, ...safe } = user;
-  return json({ user: safe });
-}
+    if (route === 'auth/login' && method === 'POST') {
+      const { email, password } = body;
+      const user = await db.collection('users').findOne({ email, password });
+      if (!user) return json({ error: 'Invalid credentials' }, 401);
+      if (user.status !== 'Active') return json({ error: 'Account is deactivated. Contact admin.' }, 403);
+      await log('USER_LOGIN', 'User', user.id, user.id);
+      const { password: _, _id, ...safe } = user;
+      return json({ user: safe });
+    }
 
     if (route === 'auth/logout' && method === 'POST') {
-      // Clear cookie handled by client; just log
       return json({ ok: true });
     }
 
@@ -143,7 +141,6 @@ if (route === 'auth/login' && method === 'POST') {
 
     // ===== ASSETS =====
     if (route === 'assets' && method === 'POST') {
-      // Only Admin and Asset Manager can create
       const asset = {
         id: uuid(),
         code: body.code || `AST-${String(Date.now()).slice(-6)}`,
@@ -347,7 +344,6 @@ if (route === 'auth/login' && method === 'POST') {
       const id = route.split('/')[1];
       const audit = await db.collection('audits').findOne({ id });
       if (!audit) return json({ error: 'Not found' }, 404);
-      // Update status or findings
       const update = {};
       if (body.status) update.status = body.status;
       if (body.findings) update.findings = body.findings;
@@ -378,7 +374,7 @@ if (route === 'auth/login' && method === 'POST') {
       return json({ ok: true });
     }
 
-    // ===== REPORTS (dummy for now, will be implemented later) =====
+    // ===== REPORTS =====
     if (route === 'reports' && method === 'GET') {
       return json({ message: 'Reports endpoint - will be implemented in Module 8' });
     }
@@ -393,10 +389,10 @@ if (route === 'auth/login' && method === 'POST') {
       return json(logs.map(({ _id, ...rest }) => rest));
     }
 
-    // ===== RESET (dev only) =====
+    // ===== RESET (Admin only) =====
     if (route === 'reset' && method === 'POST') {
-      // Only allow if user is admin
-      const user = getSession(request);
+      // Only allow if user is admin (already checked by the general auth, but double-check)
+      const user = request.user;
       if (!user || user.role !== ROLES.ADMIN) {
         return json({ error: 'Forbidden' }, 403);
       }
