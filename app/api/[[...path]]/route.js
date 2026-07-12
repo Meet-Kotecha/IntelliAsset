@@ -34,12 +34,13 @@ async function handler(request, { params }) {
     const route = pathArr.join('/');
     const body = ['POST', 'PUT', 'PATCH', 'DELETE'].includes(method) ? await request.json().catch(() => ({})) : {};
 
+    // ===== AUTH =====
     if (route === 'auth/signup' && method === 'POST') {
       const { email, password, name } = body;
       if (!email || !password || !name) return json({ error: 'Missing fields' }, 400);
       const existing = await db.collection('users').findOne({ email });
       if (existing) return json({ error: 'Email already registered' }, 400);
-      const user = { id: uuid(), email, password, name, role: 'Employee', departmentId: null, avatar: '\ud83d\udc64' };
+      const user = { id: uuid(), email, password, name, role: 'Employee', departmentId: null, avatar: '👤' };
       await db.collection('users').insertOne(user);
       await log('USER_SIGNUP', 'User', user.id, user.id);
       const { password: _, _id, ...safe } = user;
@@ -54,6 +55,7 @@ async function handler(request, { params }) {
       return json({ user: safe });
     }
 
+    // ===== BOOTSTRAP =====
     if (route === 'bootstrap' && method === 'GET') {
       const [assets, users, departments, categories, allocations, bookings, maintenance, activityLogs, notifications, audits, transfers] = await Promise.all([
         db.collection('assets').find({}).toArray(),
@@ -79,6 +81,7 @@ async function handler(request, { params }) {
       });
     }
 
+    // ===== COPILOT =====
     if (route === 'copilot' && method === 'POST') {
       const { query } = body;
       const [assets, users, allocations, maintenance, bookings, departments, categories] = await Promise.all([
@@ -99,6 +102,7 @@ async function handler(request, { params }) {
       return json(result);
     }
 
+    // ===== ASSETS =====
     if (route === 'assets' && method === 'POST') {
       const asset = {
         id: uuid(),
@@ -132,6 +136,7 @@ async function handler(request, { params }) {
       return json({ ok: true });
     }
 
+    // ===== ALLOCATIONS =====
     if (route === 'allocations' && method === 'POST') {
       const { assetId, userId, expectedReturnAt, notes, actorId } = body;
       const asset = await db.collection('assets').findOne({ id: assetId });
@@ -162,6 +167,7 @@ async function handler(request, { params }) {
       return json({ ok: true });
     }
 
+    // ===== TRANSFERS =====
     if (route === 'transfers' && method === 'POST') {
       const { assetId, fromUserId, toUserId, actorId } = body;
       const active = await db.collection('allocations').findOne({ assetId, status: 'Active' });
@@ -180,6 +186,7 @@ async function handler(request, { params }) {
       return json({ ok: true });
     }
 
+    // ===== BOOKINGS =====
     if (route === 'bookings' && method === 'POST') {
       const { assetId, userId, startAt, endAt, purpose } = body;
       const start = new Date(startAt), end = new Date(endAt);
@@ -201,6 +208,7 @@ async function handler(request, { params }) {
       return json({ ok: true });
     }
 
+    // ===== MAINTENANCE =====
     if (route === 'maintenance' && method === 'POST') {
       const { assetId, type, description, cost, actorId } = body;
       const record = {
@@ -228,6 +236,7 @@ async function handler(request, { params }) {
       return json({ ok: true });
     }
 
+    // ===== USERS =====
     if (route.startsWith('users/') && method === 'PATCH') {
       const id = route.split('/')[1];
       const update = {};
@@ -238,6 +247,7 @@ async function handler(request, { params }) {
       return json({ ok: true });
     }
 
+    // ===== DEPARTMENTS =====
     if (route === 'departments' && method === 'POST') {
       const dept = { id: uuid(), name: body.name, code: body.code, headId: body.headId || null };
       await db.collection('departments').insertOne(dept);
@@ -245,18 +255,38 @@ async function handler(request, { params }) {
       return json(clean);
     }
 
+    // ===== CATEGORIES =====
     if (route === 'categories' && method === 'POST') {
-      const cat = { id: uuid(), name: body.name, icon: body.icon || '\ud83d\udce6', description: body.description || '' };
+      const cat = { id: uuid(), name: body.name, icon: body.icon || '📦', description: body.description || '' };
       await db.collection('categories').insertOne(cat);
       const { _id, ...clean } = cat;
       return json(clean);
     }
 
+    // ===== AUDITS =====
     if (route === 'audits' && method === 'POST') {
       const audit = { id: uuid(), name: body.name, startDate: body.startDate, endDate: body.endDate, status: body.status || 'Scheduled', findings: [] };
       await db.collection('audits').insertOne(audit);
       const { _id, ...clean } = audit;
       return json(clean);
+    }
+
+    // ===== NOTIFICATIONS =====
+    if (route === 'notifications' && method === 'GET') {
+      const notifications = await db.collection('notifications')
+        .find({})
+        .sort({ createdAt: -1 })
+        .toArray();
+      return json(notifications.map(({ _id, ...rest }) => rest));
+    }
+
+    if (route === 'notifications/mark-all-read' && method === 'POST') {
+      await db.collection('notifications').updateMany(
+        { read: false },
+        { $set: { read: true } }
+      );
+      await log('NOTIFICATIONS_MARKED_READ', 'Notifications', 'all', body.userId);
+      return json({ ok: true });
     }
 
     if (route.startsWith('notifications/') && route.endsWith('/read') && method === 'POST') {
@@ -265,6 +295,7 @@ async function handler(request, { params }) {
       return json({ ok: true });
     }
 
+    // ===== RESET =====
     if (route === 'reset' && method === 'POST') {
       for (const c of ['assets', 'users', 'departments', 'categories', 'allocations', 'bookings', 'maintenance', 'activityLogs', 'notifications', 'audits', 'transfers']) {
         await db.collection(c).deleteMany({});

@@ -13,7 +13,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Progress } from '@/components/ui/progress';
 import { toast } from 'sonner';
-import { LayoutDashboard, Sparkles, Package, ArrowRightLeft, Calendar, Wrench, ClipboardCheck, Building2, Users, FileBarChart, Activity, Settings, LogOut, Search, Bell, Plus, Send, TrendingUp, AlertTriangle, CheckCircle2, Clock, DollarSign, Boxes, Zap, ShieldCheck, ArrowUpRight, Bot, User as UserIcon, Filter, Trash2, RotateCcw, ChevronRight, Moon, Sun } from 'lucide-react';
+import { LayoutDashboard, Sparkles, Package, ArrowRightLeft, Calendar, Wrench, ClipboardCheck, Building2, Users, FileBarChart, Activity, Settings, LogOut, Search, Bell, Plus, Send, TrendingUp, AlertTriangle, CheckCircle2, Clock, DollarSign, Boxes, Zap, ShieldCheck, ArrowUpRight, Bot, User as UserIcon, Filter, Trash2, RotateCcw, ChevronRight, Moon, Sun, X } from 'lucide-react';
 import { BarChart, Bar, LineChart, Line, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip as RTooltip, ResponsiveContainer, RadialBarChart, RadialBar, Legend, AreaChart, Area } from 'recharts';
 
 const api = async (path, opts = {}) => {
@@ -59,7 +59,6 @@ function AuthScreen({ onLogin }) {
 
   return (
     <div className="min-h-screen flex items-center justify-center p-4 relative overflow-hidden">
-      {/* Enhanced animated gradient background */}
       <div className="absolute inset-0 -z-10 overflow-hidden">
         <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-purple-500/20 rounded-full blur-3xl animate-pulse" />
         <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-blue-500/20 rounded-full blur-3xl animate-pulse delay-1000" />
@@ -164,7 +163,7 @@ function Sidebar({ active, setActive, user, onLogout }) {
   );
 }
 
-function TopBar({ title, subtitle, notifications, user }) {
+function TopBar({ title, subtitle, notifications, user, onOpenNotifications }) {
   const { theme, setTheme } = useTheme();
   const unread = notifications?.filter(n => !n.read).length || 0;
   return (
@@ -174,7 +173,6 @@ function TopBar({ title, subtitle, notifications, user }) {
         {subtitle && <p className="text-sm text-muted-foreground mt-1">{subtitle}</p>}
       </div>
       <div className="flex items-center gap-3">
-        {/* Theme Toggle */}
         <button
           onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
           className="p-2 rounded-lg hover:bg-white/5 transition-colors"
@@ -187,17 +185,115 @@ function TopBar({ title, subtitle, notifications, user }) {
           )}
         </button>
 
-        {/* Notification Bell */}
-        <div className="relative">
+        <button onClick={onOpenNotifications} className="relative p-1 hover:bg-white/5 rounded-lg transition-colors">
           <Bell className="w-5 h-5 text-muted-foreground" />
-          {unread > 0 && <span className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 rounded-full text-[10px] flex items-center justify-center">{unread}</span>}
-        </div>
+          {unread > 0 && (
+            <span className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 rounded-full text-[10px] flex items-center justify-center">
+              {unread}
+            </span>
+          )}
+        </button>
+
         <div className="text-right hidden md:block">
           <div className="text-sm font-medium">{user.name}</div>
           <div className="text-xs text-muted-foreground">{user.role}</div>
         </div>
       </div>
     </div>
+  );
+}
+
+function NotificationDrawer({ open, onClose, notifications, onMarkRead, onMarkAllRead }) {
+  const unreadCount = notifications?.filter(n => !n.read).length || 0;
+
+  return (
+    <>
+      {open && (
+        <div 
+          className="fixed inset-0 bg-black/50 z-50 transition-opacity"
+          onClick={onClose}
+        />
+      )}
+      
+      <div
+        className={`fixed top-0 right-0 h-full w-96 bg-background border-l border-border/50 shadow-2xl z-50 transition-transform duration-300 ease-in-out ${
+          open ? 'translate-x-0' : 'translate-x-full'
+        }`}
+      >
+        <div className="flex items-center justify-between p-4 border-b border-border/50">
+          <div>
+            <h3 className="text-lg font-semibold">Notifications</h3>
+            <p className="text-xs text-muted-foreground">
+              {unreadCount} unread {unreadCount !== 1 ? 'notifications' : 'notification'}
+            </p>
+          </div>
+          <div className="flex items-center gap-2">
+            {unreadCount > 0 && (
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={onMarkAllRead}
+                className="text-xs"
+              >
+                Mark all read
+              </Button>
+            )}
+            <Button variant="ghost" size="sm" onClick={onClose}>
+              <X className="w-4 h-4" />
+            </Button>
+          </div>
+        </div>
+
+        <div className="overflow-y-auto h-[calc(100vh-80px)] p-4 space-y-2">
+          {notifications?.length === 0 ? (
+            <div className="text-center text-muted-foreground py-12">
+              <Bell className="w-12 h-12 mx-auto mb-3 opacity-20" />
+              <p className="text-sm">No notifications yet</p>
+            </div>
+          ) : (
+            notifications.map((n) => (
+              <div
+                key={n.id}
+                className={`p-3 rounded-lg border transition-colors cursor-pointer hover:bg-white/5 ${
+                  n.read 
+                    ? 'bg-white/5 border-white/5' 
+                    : 'bg-purple-500/5 border-purple-500/20'
+                }`}
+                onClick={() => onMarkRead(n.id)}
+              >
+                <div className="flex items-start gap-3">
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2">
+                      <span className={`text-xs font-medium ${n.type === 'critical' ? 'text-red-400' : n.type === 'warning' ? 'text-amber-400' : 'text-blue-400'}`}>
+                        {n.type?.toUpperCase() || 'INFO'}
+                      </span>
+                      {!n.read && (
+                        <span className="w-1.5 h-1.5 bg-purple-400 rounded-full flex-shrink-0" />
+                      )}
+                    </div>
+                    <div className="text-sm font-medium mt-0.5">{n.title}</div>
+                    <div className="text-xs text-muted-foreground mt-0.5">{n.message}</div>
+                    <div className="text-[10px] text-muted-foreground mt-1">
+                      {new Date(n.createdAt).toLocaleString()}
+                    </div>
+                  </div>
+                  {!n.read && (
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
+                      className="h-6 w-6 p-0"
+                      onClick={(e) => { e.stopPropagation(); onMarkRead(n.id); }}
+                    >
+                      <CheckCircle2 className="w-3 h-3 text-muted-foreground" />
+                    </Button>
+                  )}
+                </div>
+              </div>
+            ))
+          )}
+        </div>
+      </div>
+    </>
   );
 }
 
@@ -998,17 +1094,57 @@ function App() {
   const [data, setData] = useState(null);
   const [active, setActive] = useState('dashboard');
   const [copilotSeed, setCopilotSeed] = useState('');
+  const [notificationsOpen, setNotificationsOpen] = useState(false);
+  const [notifications, setNotifications] = useState([]);
 
   useEffect(() => {
     const stored = localStorage.getItem('user');
     if (stored) setUser(JSON.parse(stored));
   }, []);
 
+  const fetchNotifications = async () => {
+    if (!user) return;
+    try {
+      const data = await api('/notifications');
+      setNotifications(data);
+    } catch (e) {
+      console.error('Failed to fetch notifications:', e);
+    }
+  };
+
+  const markNotificationRead = async (id) => {
+    try {
+      await api(`/notifications/${id}/read`, { method: 'POST', body: { userId: user.id } });
+      setNotifications(prev => prev.map(n => 
+        n.id === id ? { ...n, read: true } : n
+      ));
+    } catch (e) {
+      console.error('Failed to mark as read:', e);
+    }
+  };
+
+  const markAllRead = async () => {
+    try {
+      await api('/notifications/mark-all-read', { method: 'POST', body: { userId: user.id } });
+      setNotifications(prev => prev.map(n => ({ ...n, read: true })));
+      toast.success('All notifications marked as read');
+    } catch (e) {
+      toast.error('Failed to mark all as read');
+    }
+  };
+
   const refresh = async () => {
     try { const d = await api('/bootstrap'); setData(d); } catch (e) { console.error(e); }
   };
 
-  useEffect(() => { if (user) refresh(); }, [user]);
+  useEffect(() => { if (user) { refresh(); fetchNotifications(); } }, [user]);
+
+  // Poll for notifications every 30 seconds
+  useEffect(() => {
+    if (!user) return;
+    const interval = setInterval(fetchNotifications, 30000);
+    return () => clearInterval(interval);
+  }, [user]);
 
   if (!user) return <AuthScreen onLogin={setUser} />;
   if (!data) return <div className="min-h-screen flex items-center justify-center"><div className="text-muted-foreground animate-pulse">Loading workspace...</div></div>;
@@ -1034,7 +1170,12 @@ function App() {
     <div className="flex min-h-screen">
       <Sidebar active={active} setActive={setActive} user={user} onLogout={() => { localStorage.removeItem('user'); setUser(null); }} />
       <main className="flex-1 p-8 overflow-x-hidden">
-        <TopBar {...titles[active]} notifications={data.notifications} user={user} />
+        <TopBar 
+          {...titles[active]} 
+          notifications={notifications} 
+          user={user} 
+          onOpenNotifications={() => setNotificationsOpen(true)}
+        />
         <AnimatePresence mode="wait">
           <motion.div key={active} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} transition={{ duration: 0.2 }}>
             {active === 'dashboard' && <Dashboard data={data} setActive={setActiveWithSeed} />}
@@ -1052,6 +1193,14 @@ function App() {
           </motion.div>
         </AnimatePresence>
       </main>
+      
+      <NotificationDrawer
+        open={notificationsOpen}
+        onClose={() => setNotificationsOpen(false)}
+        notifications={notifications}
+        onMarkRead={markNotificationRead}
+        onMarkAllRead={markAllRead}
+      />
     </div>
   );
 }
