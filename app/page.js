@@ -58,9 +58,12 @@ function AuthScreen({ onLogin }) {
 
   return (
     <div className="min-h-screen flex items-center justify-center p-4 relative overflow-hidden">
-      <div className="absolute inset-0 -z-10">
-        <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-purple-500/20 rounded-full blur-3xl" />
-        <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-blue-500/20 rounded-full blur-3xl" />
+      {/* Enhanced animated gradient background */}
+      <div className="absolute inset-0 -z-10 overflow-hidden">
+        <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-purple-500/20 rounded-full blur-3xl animate-pulse" />
+        <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-blue-500/20 rounded-full blur-3xl animate-pulse delay-1000" />
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-purple-600/5 rounded-full blur-3xl" />
+        <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxnIGZpbGw9IiNmZmZmZmYiIGZpbGwtb3BhY2l0eT0iMC4wMyI+PHBhdGggZD0iTTM2IDM0djItSDI0di0yaDEyek0zNiAyNHYySDI0di0yaDEyeiIvPjwvZz48L2c+PC9zdmc+')] bg-repeat" />
       </div>
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="w-full max-w-md">
         <div className="flex items-center gap-2 mb-8 justify-center">
@@ -131,7 +134,14 @@ function Sidebar({ active, setActive, user, onLogout }) {
           const isActive = active === item.id;
           return (
             <button key={item.id} onClick={() => setActive(item.id)}
-              className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm mb-0.5 transition-all ${isActive ? 'bg-white/10 text-white' : 'text-muted-foreground hover:text-white hover:bg-white/5'} ${item.highlight ? 'relative' : ''}`}>
+              className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm mb-0.5 transition-all duration-200 relative ${
+                isActive
+                  ? 'text-white bg-white/5 shadow-lg shadow-purple-500/5' 
+                  : 'text-muted-foreground hover:text-white hover:bg-white/5'
+              } ${item.highlight ? 'relative' : ''}`}>
+              {isActive && (
+                <div className="absolute left-0 w-1 h-8 bg-gradient-to-b from-purple-500 to-blue-500 rounded-r-full" />
+              )}
               <Icon className={`w-4 h-4 ${item.highlight ? 'text-purple-400' : ''}`} />
               <span>{item.label}</span>
               {item.highlight && <span className="ml-auto text-[9px] px-1.5 py-0.5 bg-purple-500/20 text-purple-300 rounded">AI</span>}
@@ -178,16 +188,17 @@ function TopBar({ title, subtitle, notifications, user }) {
 function StatCard({ icon: Icon, label, value, change, color = 'purple', suffix = '' }) {
   const colors = { purple: 'from-purple-500 to-purple-600', blue: 'from-blue-500 to-blue-600', emerald: 'from-emerald-500 to-emerald-600', amber: 'from-amber-500 to-amber-600', red: 'from-red-500 to-red-600' };
   return (
-    <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="glass rounded-xl p-5 relative overflow-hidden group">
+    <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="glass rounded-xl p-5 relative overflow-hidden group hover:scale-[1.02] transition-transform duration-300 cursor-default">
       <div className={`absolute -top-8 -right-8 w-24 h-24 bg-gradient-to-br ${colors[color]} opacity-10 rounded-full blur-2xl group-hover:opacity-20 transition-opacity`} />
-      <div className="flex items-center justify-between mb-3">
+      <div className="absolute -bottom-16 -right-16 w-32 h-32 bg-gradient-to-br from-purple-500/0 to-purple-500/5 rounded-full blur-2xl group-hover:opacity-100 opacity-0 transition-opacity duration-500" />
+      <div className="flex items-center justify-between mb-3 relative z-10">
         <div className={`w-9 h-9 rounded-lg bg-gradient-to-br ${colors[color]} flex items-center justify-center`}>
           <Icon className="w-4 h-4 text-white" />
         </div>
         {change && <div className="text-xs text-emerald-400 flex items-center gap-0.5"><TrendingUp className="w-3 h-3" />{change}</div>}
       </div>
-      <div className="text-2xl font-bold">{value}{suffix}</div>
-      <div className="text-xs text-muted-foreground mt-1">{label}</div>
+      <div className="text-2xl font-bold relative z-10">{value}{suffix}</div>
+      <div className="text-xs text-muted-foreground mt-1 relative z-10">{label}</div>
     </motion.div>
   );
 }
@@ -399,7 +410,7 @@ function CopilotPage({ data, initialQuery, user }) {
                 {m.role === 'user' ? <UserIcon className="w-4 h-4 text-blue-300" /> : <Bot className="w-4 h-4 text-white" />}
               </div>
               <div className={`flex-1 max-w-2xl ${m.role === 'user' ? 'text-right' : ''}`}>
-                <div className={`inline-block text-left rounded-xl px-4 py-3 text-sm ${m.role === 'user' ? 'bg-blue-500/10 border border-blue-500/20' : 'bg-white/5 border border-white/10'}`}>
+                <div className={`inline-block text-left rounded-xl px-4 py-3 text-sm ${m.role === 'user' ? 'bg-gradient-to-r from-purple-500/20 to-blue-500/20 border border-purple-500/20 shadow-lg shadow-purple-500/5' : 'bg-white/5 border border-white/10'}`}>
                   {renderMd(m.content)}
                 </div>
                 {m.cards && m.cards.length > 0 && (
@@ -415,7 +426,18 @@ function CopilotPage({ data, initialQuery, user }) {
               </div>
             </motion.div>
           ))}
-          {loading && <div className="flex gap-3"><div className="w-8 h-8 rounded-lg bg-gradient-to-br from-purple-500 to-blue-500 flex items-center justify-center"><Bot className="w-4 h-4 text-white" /></div><div className="flex items-center gap-1"><span className="w-2 h-2 bg-purple-400 rounded-full animate-bounce" style={{animationDelay:'0ms'}}/><span className="w-2 h-2 bg-purple-400 rounded-full animate-bounce" style={{animationDelay:'150ms'}}/><span className="w-2 h-2 bg-purple-400 rounded-full animate-bounce" style={{animationDelay:'300ms'}}/></div></div>}
+          {loading && (
+            <div className="flex gap-3">
+              <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-purple-500 to-blue-500 flex items-center justify-center shadow-lg shadow-purple-500/20">
+                <Bot className="w-4 h-4 text-white" />
+              </div>
+              <div className="flex items-center gap-1.5 bg-white/5 px-4 py-3 rounded-xl border border-white/10">
+                <span className="w-2.5 h-2.5 bg-purple-400 rounded-full animate-bounce" style={{animationDelay:'0ms'}}/>
+                <span className="w-2.5 h-2.5 bg-purple-400 rounded-full animate-bounce" style={{animationDelay:'150ms'}}/>
+                <span className="w-2.5 h-2.5 bg-purple-400 rounded-full animate-bounce" style={{animationDelay:'300ms'}}/>
+              </div>
+            </div>
+          )}
           <div ref={endRef} />
         </div>
 
@@ -695,7 +717,7 @@ function BookingsPage({ data, refresh, user }) {
           <StatCard icon={CheckCircle2} label="This Month" value={data.bookings.length} color="emerald" />
         </div>
         <Dialog open={open} onOpenChange={setOpen}>
-          <DialogTrigger asChild><Button className="ml-4 bg-gradient-to-r from-purple-500 to-blue-500"><Plus className="w-4 h-4 mr-1"/>Book Resource</Button></DialogTrigger>
+          <Button onClick={() => setOpen(true)} className="ml-4 bg-gradient-to-r from-purple-500 to-blue-500"><Plus className="w-4 h-4 mr-1"/>Book Resource</Button>
           <DialogContent className="glass">
             <DialogHeader><DialogTitle>New Booking</DialogTitle></DialogHeader>
             <div className="space-y-3">
