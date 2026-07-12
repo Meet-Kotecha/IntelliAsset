@@ -28,15 +28,13 @@ const iconMap = {
 export function Sidebar({ menuItems, user, onLogout }) {
   const pathname = usePathname();
 
-  // Get the base path (first part of URL)
   const getBasePath = (path) => {
     const parts = path.split('/');
-    return parts.length > 1 ? '/' + parts[1] : path;
+    return parts.length > 2 ? '/' + parts[1] + '/' + parts[2] : path;
   };
 
   return (
     <aside className="w-64 flex-shrink-0 border-r border-border/50 bg-black/20 backdrop-blur-xl flex flex-col h-screen sticky top-0 overflow-hidden">
-      {/* Logo */}
       <div className="p-5 border-b border-border/50">
         <Link href="/" className="flex items-center gap-2">
           <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-purple-500 to-blue-500 flex items-center justify-center glow-purple">
@@ -49,12 +47,11 @@ export function Sidebar({ menuItems, user, onLogout }) {
         </Link>
       </div>
 
-      {/* Navigation */}
       <nav className="flex-1 p-3 overflow-y-auto scrollbar-thin">
         {menuItems.map((item) => {
           const Icon = iconMap[item.icon] || LayoutDashboard;
           const basePath = getBasePath(pathname);
-          const itemPath = `/${item.id}`;
+          const itemPath = `/dashboard/${item.id}`;
           const isActive = basePath === itemPath || pathname.startsWith(itemPath + '/');
 
           return (
@@ -77,7 +74,6 @@ export function Sidebar({ menuItems, user, onLogout }) {
         })}
       </nav>
 
-      {/* User Profile */}
       <div className="p-3 border-t border-border/50">
         <div className="flex items-center gap-2 p-2 rounded-lg hover:bg-white/5 transition-colors">
           <div className="w-8 h-8 rounded-full bg-gradient-to-br from-purple-500 to-blue-500 flex items-center justify-center text-sm font-bold">

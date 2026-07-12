@@ -32,21 +32,18 @@ export default function LoginPage() {
     try {
       const data = await api('/auth/login', { method: 'POST', body: { email, password } });
       
-      // Store user in localStorage (for client-side access)
       localStorage.setItem('user', JSON.stringify(data.user));
-      
-      // Store user in cookie (for middleware)
       document.cookie = `user=${JSON.stringify(data.user)}; path=/; max-age=86400`;
       
       toast.success(`Welcome, ${data.user.name}!`);
       
       const roleMap = {
-        'Admin': '/admin',
-        'Asset Manager': '/manager',
-        'Department Head': '/department',
-        'Employee': '/employee'
+        'Admin': '/dashboard/admin',
+        'Asset Manager': '/dashboard/manager',
+        'Department Head': '/dashboard/department',
+        'Employee': '/dashboard/employee'
       };
-      router.push(roleMap[data.user.role] || '/employee');
+      router.push(roleMap[data.user.role] || '/dashboard/employee');
     } catch (e) {
       toast.error(e.message);
     }
@@ -61,12 +58,12 @@ export default function LoginPage() {
       document.cookie = `user=${JSON.stringify(data.user)}; path=/; max-age=86400`;
       toast.success(`Welcome, ${data.user.name}!`);
       const roleMap = {
-        'Admin': '/admin',
-        'Asset Manager': '/manager',
-        'Department Head': '/department',
-        'Employee': '/employee'
+        'Admin': '/dashboard/admin',
+        'Asset Manager': '/dashboard/manager',
+        'Department Head': '/dashboard/department',
+        'Employee': '/dashboard/employee'
       };
-      router.push(roleMap[data.user.role] || '/employee');
+      router.push(roleMap[data.user.role] || '/dashboard/employee');
     } catch (e) {
       toast.error(e.message);
     }

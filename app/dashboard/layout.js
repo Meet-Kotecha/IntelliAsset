@@ -19,7 +19,6 @@ export default function DashboardLayout({ children }) {
       const userData = JSON.parse(stored);
       setUser(userData);
       
-      // Check if user has access to this route
       if (!hasAccess(userData.role, pathname)) {
         router.push('/unauthorized');
       }
@@ -47,7 +46,6 @@ export default function DashboardLayout({ children }) {
 
   const menuItems = MENU_ITEMS[user.role] || [];
   
-  // Determine page title from path
   const pageTitle = pathname.split('/').pop() || 'Dashboard';
   const formattedTitle = pageTitle.charAt(0).toUpperCase() + pageTitle.slice(1).replace(/-/g, ' ');
 
