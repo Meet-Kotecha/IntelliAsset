@@ -1,174 +1,154 @@
 'use client';
-import { useState, useEffect } from 'react';
-import { Button } from '@/components/ui/button';
+import { useState, useEffect, useMemo } from 'react';
 import { Card } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Badge } from '@/components/ui/badge';
+import { Users, Package, Clock, Calendar, TrendingUp, Building2, UserCheck, ArrowUpRight, Activity } from 'lucide-react';
 import { toast } from 'sonner';
-import { Plus, Pencil, Trash2 } from 'lucide-react';
 
-const api = async (path, opts = {}) => {
-  const res = await fetch(`/api${path}`, {
-    method: opts.method || 'GET',
-    headers: { 'Content-Type': 'application/json' },
-    body: opts.body ? JSON.stringify(opts.body) : undefined,
-  });
-  const data = await res.json().catch(() => ({}));
-  if (!res.ok) throw new Error(data.error || 'Request failed');
-  return data;
+const api = async (path) => {
+  const res = await fetch(`/api${path}`);
+  if (!res.ok) throw new Error('Failed to fetch');
+  return res.json();
 };
 
-export default function DepartmentsPage() {
-  const [departments, setDepartments] = useState([]);
-  const [users, setUsers] = useState([]);
+export default function DepartmentDashboard() {
+  const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [dialogOpen, setDialogOpen] = useState(false);
-  const [editingDept, setEditingDept] = useState(null);
-  const [form, setForm] = useState({ name: '', code: '', headId: '' });
-
-  const fetchData = async () => {
-    try {
-      const [depts, usersData] = await Promise.all([
-        api('/departments'),
-        api('/users')
-      ]);
-      setDepartments(depts);
-      setUsers(usersData);
-    } catch (e) {
-      toast.error('Failed to load data');
-    }
-    setLoading(false);
-  };
+  const [user, setUser] = useState(null);
 
   useEffect(() => {
+    const stored = localStorage.getItem('user');
+    if (stored) setUser(JSON.parse(stored));
+  }, []);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const d = await api('/bootstrap');
+        setData(d);
+      } catch (e) {
+        toast.error('Failed to load department data');
+      }
+      setLoading(false);
+    };
     fetchData();
   }, []);
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    try {
-      if (editingDept) {
-        await api(`/departments/${editingDept.id}`, { method: 'PUT', body: form });
-        toast.success('Department updated');
-      } else {
-        await api('/departments', { method: 'POST', body: form });
-        toast.success('Department created');
-      }
-      setDialogOpen(false);
-      fetchData();
-    } catch (e) {
-      toast.error(e.message);
-    }
-  };
+  const stats = useMemo(() => {
+    if (!data || !user) return null;
+    const { assets, users, allocations, bookings } = data;
+    const deptId = user.departmentId;
+    if (!deptId) return null;
+    const deptUsers = users.filter(u => u.departmentId === deptId);
+    const deptAllocs = allocations.filter(al => deptUsers.some(u => u.id === al.userId));
+    const deptAssets = assets.filter(a => deptAllocs.some(al => al.assetId === a.id));
+    const activeAllocs = deptAllocs.filter(al => al.status === 'Active');
+    const overdue = activeAllocs.filter(al => new Date(al.expectedReturnAt) < new Date()).length;
+    const deptBookings = bookings.filter(b => deptUsers.some(u => u.id === b.userId));
 
-  const handleDelete = async (id) => {
-    if (!confirm('Delete this department?')) return;
-    try {
-      await api(`/departments/${id}`, { method: 'DELETE' });
-      toast.success('Department deleted');
-      fetchData();
-    } catch (e) {
-      toast.error(e.message);
-    }
-  };
+    return {
+      deptUsers: deptUsers.length,
+      deptAssets: deptAssets.length,
+      activeAllocs: activeAllocs.length,
+      overdue,
+      deptBookings: deptBookings.length,
+    };
+  }, [data, user]);
 
-  const openEdit = (dept) => {
-    setEditingDept(dept);
-    setForm({ name: dept.name, code: dept.code, headId: dept.headId || '' });
-    setDialogOpen(true);
-  };
+  if (loading) {
+    return <div className="flex items-center justify-center h-64"><div className="text-muted-foreground animate-pulse">Loading department data...</div></div>;
+  }
 
-  const openCreate = () => {
-    setEditingDept(null);
-    setForm({ name: '', code: '', headId: '' });
-    setDialogOpen(true);
-  };
+  if (!data || !stats) return <div className="text-center py-12 text-muted-foreground">No department data available</div>;
 
-  if (loading) return <div className="flex items-center justify-center h-64"><div className="text-muted-foreground animate-pulse">Loading...</div></div>;
+  const { deptUsers, deptAssets, activeAllocs, overdue, deptBookings } = stats;
 
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <div>
-          <h2 className="text-2xl font-bold">Departments</h2>
-          <p className="text-sm text-muted-foreground">Manage organizational departments</p>
+          <h1 className="text-3xl font-bold tracking-tight">Department Dashboard</h1>
+          <p className="text-sm text-muted-foreground">{user?.departmentId ? 'Your department overview' : 'Department not assigned'}</p>
         </div>
-        <Button onClick={openCreate} className="bg-gradient-to-r from-purple-500 to-blue-500">
-          <Plus className="w-4 h-4 mr-2" /> New Department
-        </Button>
+        <Badge className="bg-emerald-500/10 text-emerald-400 border-emerald-500/20">
+          <Activity className="w-3 h-3 mr-1" /> Live
+        </Badge>
       </div>
 
-      <Card className="glass p-0 overflow-hidden">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Name</TableHead>
-              <TableHead>Code</TableHead>
-              <TableHead>Head</TableHead>
-              <TableHead className="text-right">Actions</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {departments.map((dept) => {
-              const head = users.find(u => u.id === dept.headId);
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <Card className="glass p-5 relative overflow-hidden group hover:scale-[1.02] transition-transform">
+          <div className="absolute -top-8 -right-8 w-24 h-24 bg-purple-500/10 rounded-full blur-2xl" />
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-xs font-medium text-muted-foreground uppercase">Team Members</span>
+            <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-purple-500 to-purple-600 flex items-center justify-center"><Users className="w-4 h-4 text-white" /></div>
+          </div>
+          <div className="text-3xl font-bold">{deptUsers}</div>
+          <div className="text-xs text-muted-foreground mt-1">Active employees</div>
+        </Card>
+
+        <Card className="glass p-5 relative overflow-hidden group hover:scale-[1.02] transition-transform">
+          <div className="absolute -top-8 -right-8 w-24 h-24 bg-blue-500/10 rounded-full blur-2xl" />
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-xs font-medium text-muted-foreground uppercase">Department Assets</span>
+            <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center"><Package className="w-4 h-4 text-white" /></div>
+          </div>
+          <div className="text-3xl font-bold">{deptAssets}</div>
+          <div className="text-xs text-muted-foreground mt-1">{activeAllocs} currently allocated</div>
+        </Card>
+
+        <Card className="glass p-5 relative overflow-hidden group hover:scale-[1.02] transition-transform">
+          <div className="absolute -top-8 -right-8 w-24 h-24 bg-emerald-500/10 rounded-full blur-2xl" />
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-xs font-medium text-muted-foreground uppercase">Active Allocations</span>
+            <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-emerald-500 to-emerald-600 flex items-center justify-center"><UserCheck className="w-4 h-4 text-white" /></div>
+          </div>
+          <div className="text-3xl font-bold text-emerald-400">{activeAllocs}</div>
+          <div className="text-xs text-muted-foreground mt-1">{overdue} overdue</div>
+        </Card>
+
+        <Card className="glass p-5 relative overflow-hidden group hover:scale-[1.02] transition-transform">
+          <div className="absolute -top-8 -right-8 w-24 h-24 bg-red-500/10 rounded-full blur-2xl" />
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-xs font-medium text-muted-foreground uppercase">Overdue Returns</span>
+            <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-red-500 to-red-600 flex items-center justify-center"><Clock className="w-4 h-4 text-white" /></div>
+          </div>
+          <div className="text-3xl font-bold text-red-400">{overdue}</div>
+          <div className="text-xs text-muted-foreground mt-1">Action required</div>
+        </Card>
+      </div>
+
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        <Card className="glass p-3 text-center">
+          <Calendar className="w-4 h-4 mx-auto text-purple-400" />
+          <div className="text-lg font-bold">{deptBookings}</div>
+          <div className="text-[10px] text-muted-foreground uppercase">Bookings</div>
+        </Card>
+        <Card className="glass p-3 text-center">
+          <TrendingUp className="w-4 h-4 mx-auto text-emerald-400" />
+          <div className="text-lg font-bold">{(deptAssets > 0 ? (activeAllocs / deptAssets * 100) : 0).toFixed(0)}%</div>
+          <div className="text-[10px] text-muted-foreground uppercase">Utilization</div>
+        </Card>
+      </div>
+
+      <Card className="glass p-5">
+        <h3 className="font-semibold mb-3">Recent Allocations</h3>
+        {data.allocations.filter(al => al.status === 'Active').slice(0, 5).length === 0 ? (
+          <p className="text-sm text-muted-foreground">No active allocations in your department.</p>
+        ) : (
+          <div className="space-y-2">
+            {data.allocations.filter(al => al.status === 'Active').slice(0, 5).map(al => {
+              const asset = data.assets.find(a => a.id === al.assetId);
+              const holder = data.users.find(u => u.id === al.userId);
               return (
-                <TableRow key={dept.id}>
-                  <TableCell className="font-medium">{dept.name}</TableCell>
-                  <TableCell>{dept.code}</TableCell>
-                  <TableCell>{head?.name || '—'}</TableCell>
-                  <TableCell className="text-right space-x-2">
-                    <Button variant="ghost" size="sm" onClick={() => openEdit(dept)}>
-                      <Pencil className="w-4 h-4" />
-                    </Button>
-                    <Button variant="ghost" size="sm" onClick={() => handleDelete(dept.id)}>
-                      <Trash2 className="w-4 h-4 text-red-400" />
-                    </Button>
-                  </TableCell>
-                </TableRow>
+                <div key={al.id} className="flex items-center justify-between p-2 rounded-lg bg-white/5 border border-white/10 text-sm">
+                  <span>{asset?.name || 'Unknown'} — {holder?.name || 'Unknown'}</span>
+                  <span className="text-xs text-muted-foreground">Due: {new Date(al.expectedReturnAt).toLocaleDateString()}</span>
+                </div>
               );
             })}
-          </TableBody>
-        </Table>
+          </div>
+        )}
       </Card>
-
-      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent className="glass">
-          <DialogHeader>
-            <DialogTitle>{editingDept ? 'Edit Department' : 'Create Department'}</DialogTitle>
-          </DialogHeader>
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div>
-              <Label>Name</Label>
-              <Input value={form.name} onChange={e => setForm({...form, name: e.target.value})} required />
-            </div>
-            <div>
-              <Label>Code</Label>
-              <Input value={form.code} onChange={e => setForm({...form, code: e.target.value})} required />
-            </div>
-            <div>
-              <Label>Department Head</Label>
-              <Select value={form.headId} onValueChange={v => setForm({...form, headId: v})}>
-                <SelectTrigger><SelectValue placeholder="Select a department head" /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="">None</SelectItem>
-                  {users.map(u => (
-                    <SelectItem key={u.id} value={u.id}>{u.name} ({u.role})</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <DialogFooter>
-              <Button type="button" variant="outline" onClick={() => setDialogOpen(false)}>Cancel</Button>
-              <Button type="submit" className="bg-gradient-to-r from-purple-500 to-blue-500">
-                {editingDept ? 'Update' : 'Create'}
-              </Button>
-            </DialogFooter>
-          </form>
-        </DialogContent>
-      </Dialog>
     </div>
   );
 }
