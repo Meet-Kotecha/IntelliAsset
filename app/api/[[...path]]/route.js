@@ -127,7 +127,6 @@ async function handler(request, { params }) {
     // ===== ASSETS =====
     // ============================================================
 
-    // GET /assets - List all assets
     if (route === 'assets' && method === 'GET') {
       const assets = await db.collection('assets').find({}).toArray();
       const maintenance = await db.collection('maintenance').find({}).toArray();
@@ -138,7 +137,6 @@ async function handler(request, { params }) {
       return json(enriched);
     }
 
-    // POST /assets - Create new asset
     if (route === 'assets' && method === 'POST') {
       const asset = {
         id: uuid(),
@@ -159,7 +157,6 @@ async function handler(request, { params }) {
       return json(clean);
     }
 
-    // GET /assets/:id - Get single asset
     if (route.startsWith('assets/') && method === 'GET' && !route.endsWith('/assets')) {
       const id = route.split('/')[1];
       const asset = await db.collection('assets').findOne({ id });
@@ -168,7 +165,6 @@ async function handler(request, { params }) {
       return json(clean);
     }
 
-    // PATCH /assets/:id - Update asset
     if (route.startsWith('assets/') && method === 'PATCH') {
       const id = route.split('/')[1];
       const update = { ...body };
@@ -178,7 +174,6 @@ async function handler(request, { params }) {
       return json({ ok: true });
     }
 
-    // DELETE /assets/:id - Delete asset
     if (route.startsWith('assets/') && method === 'DELETE') {
       const id = route.split('/')[1];
       await db.collection('assets').deleteOne({ id });
@@ -190,13 +185,11 @@ async function handler(request, { params }) {
     // ===== CATEGORIES =====
     // ============================================================
 
-    // GET /categories - List all categories
     if (route === 'categories' && method === 'GET') {
       const categories = await db.collection('categories').find({}).toArray();
       return json(categories.map(({ _id, ...rest }) => rest));
     }
 
-    // POST /categories - Create category
     if (route === 'categories' && method === 'POST') {
       const cat = { id: uuid(), name: body.name, icon: body.icon || '📦', description: body.description || '' };
       await db.collection('categories').insertOne(cat);
@@ -205,7 +198,6 @@ async function handler(request, { params }) {
       return json(clean);
     }
 
-    // PUT /categories/:id - Update category
     if (route.startsWith('categories/') && method === 'PUT') {
       const id = route.split('/')[1];
       const update = { name: body.name, icon: body.icon, description: body.description };
@@ -214,7 +206,6 @@ async function handler(request, { params }) {
       return json({ ok: true });
     }
 
-    // DELETE /categories/:id - Delete category
     if (route.startsWith('categories/') && method === 'DELETE') {
       const id = route.split('/')[1];
       await db.collection('categories').deleteOne({ id });
@@ -226,13 +217,11 @@ async function handler(request, { params }) {
     // ===== USERS =====
     // ============================================================
 
-    // GET /users - List all users
     if (route === 'users' && method === 'GET') {
       const users = await db.collection('users').find({}).toArray();
       return json(users.map(({ _id, password, ...rest }) => rest));
     }
 
-    // PATCH /users/:id - Update user
     if (route.startsWith('users/') && method === 'PATCH') {
       const id = route.split('/')[1];
       const update = {};
@@ -248,13 +237,11 @@ async function handler(request, { params }) {
     // ===== DEPARTMENTS =====
     // ============================================================
 
-    // GET /departments - List all departments
     if (route === 'departments' && method === 'GET') {
       const departments = await db.collection('departments').find({}).toArray();
       return json(departments.map(({ _id, ...rest }) => rest));
     }
 
-    // POST /departments - Create department
     if (route === 'departments' && method === 'POST') {
       const dept = { id: uuid(), name: body.name, code: body.code, headId: body.headId || null };
       await db.collection('departments').insertOne(dept);
@@ -263,7 +250,6 @@ async function handler(request, { params }) {
       return json(clean);
     }
 
-    // PUT /departments/:id - Update department
     if (route.startsWith('departments/') && method === 'PUT') {
       const id = route.split('/')[1];
       const update = { name: body.name, code: body.code, headId: body.headId || null };
@@ -272,7 +258,6 @@ async function handler(request, { params }) {
       return json({ ok: true });
     }
 
-    // DELETE /departments/:id - Delete department
     if (route.startsWith('departments/') && method === 'DELETE') {
       const id = route.split('/')[1];
       await db.collection('departments').deleteOne({ id });
@@ -284,13 +269,11 @@ async function handler(request, { params }) {
     // ===== ALLOCATIONS =====
     // ============================================================
 
-    // GET /allocations - List all allocations
     if (route === 'allocations' && method === 'GET') {
       const allocations = await db.collection('allocations').find({}).toArray();
       return json(allocations.map(({ _id, ...rest }) => rest));
     }
 
-    // POST /allocations - Create allocation
     if (route === 'allocations' && method === 'POST') {
       const { assetId, userId, expectedReturnAt, notes } = body;
       const asset = await db.collection('assets').findOne({ id: assetId });
@@ -312,7 +295,6 @@ async function handler(request, { params }) {
       return json(clean);
     }
 
-    // POST /allocations/:id/return - Return asset
     if (route.startsWith('allocations/') && route.endsWith('/return') && method === 'POST') {
       const id = route.split('/')[1];
       const alloc = await db.collection('allocations').findOne({ id });
@@ -327,13 +309,11 @@ async function handler(request, { params }) {
     // ===== TRANSFERS =====
     // ============================================================
 
-    // GET /transfers - List all transfers
     if (route === 'transfers' && method === 'GET') {
       const transfers = await db.collection('transfers').find({}).toArray();
       return json(transfers.map(({ _id, ...rest }) => rest));
     }
 
-    // POST /transfers - Create transfer
     if (route === 'transfers' && method === 'POST') {
       const { assetId, fromUserId, toUserId } = body;
       const active = await db.collection('allocations').findOne({ assetId, status: 'Active' });
@@ -356,13 +336,11 @@ async function handler(request, { params }) {
     // ===== BOOKINGS =====
     // ============================================================
 
-    // GET /bookings - List all bookings
     if (route === 'bookings' && method === 'GET') {
       const bookings = await db.collection('bookings').find({}).toArray();
       return json(bookings.map(({ _id, ...rest }) => rest));
     }
 
-    // POST /bookings - Create booking
     if (route === 'bookings' && method === 'POST') {
       const { assetId, userId, startAt, endAt, purpose } = body;
       const start = new Date(startAt), end = new Date(endAt);
@@ -371,15 +349,22 @@ async function handler(request, { params }) {
         assetId, status: { $ne: 'Cancelled' },
         $or: [{ startAt: { $lt: end.toISOString() }, endAt: { $gt: start.toISOString() } }]
       }).toArray();
-      if (conflicts.length) return json({ error: 'Booking conflict detected', conflicts: conflicts.map(c => ({ ...c, _id: undefined })) }, 409);
-      const booking = { id: uuid(), assetId, userId, startAt: start.toISOString(), endAt: end.toISOString(), purpose, status: 'Confirmed' };
+      if (conflicts.length) {
+        return json({ error: 'Booking conflict detected', conflicts: conflicts.map(c => ({ ...c, _id: undefined })) }, 409);
+      }
+      const booking = {
+        id: uuid(), assetId, userId,
+        startAt: start.toISOString(),
+        endAt: end.toISOString(),
+        purpose: purpose || 'General booking',
+        status: 'Confirmed'
+      };
       await db.collection('bookings').insertOne(booking);
       await log('BOOKING_CREATED', 'Booking', booking.id, request.user.id, { assetId });
       const { _id, ...clean } = booking;
       return json(clean);
     }
 
-    // DELETE /bookings/:id - Cancel booking
     if (route.startsWith('bookings/') && method === 'DELETE') {
       const id = route.split('/')[1];
       await db.collection('bookings').updateOne({ id }, { $set: { status: 'Cancelled' } });
@@ -391,13 +376,11 @@ async function handler(request, { params }) {
     // ===== MAINTENANCE =====
     // ============================================================
 
-    // GET /maintenance - List all maintenance records
     if (route === 'maintenance' && method === 'GET') {
       const maintenance = await db.collection('maintenance').find({}).toArray();
       return json(maintenance.map(({ _id, ...rest }) => rest));
     }
 
-    // POST /maintenance - Create maintenance record
     if (route === 'maintenance' && method === 'POST') {
       const { assetId, type, description, cost } = body;
       const record = {
@@ -415,7 +398,6 @@ async function handler(request, { params }) {
       return json(clean);
     }
 
-    // PATCH /maintenance/:id - Update maintenance status
     if (route.startsWith('maintenance/') && method === 'PATCH') {
       const id = route.split('/')[1];
       const rec = await db.collection('maintenance').findOne({ id });
@@ -432,13 +414,11 @@ async function handler(request, { params }) {
     // ===== AUDITS =====
     // ============================================================
 
-    // GET /audits - List all audits
     if (route === 'audits' && method === 'GET') {
       const audits = await db.collection('audits').find({}).toArray();
       return json(audits.map(({ _id, ...rest }) => rest));
     }
 
-    // POST /audits - Create audit
     if (route === 'audits' && method === 'POST') {
       const audit = { id: uuid(), name: body.name, startDate: body.startDate, endDate: body.endDate, status: body.status || 'Scheduled', findings: [] };
       await db.collection('audits').insertOne(audit);
@@ -447,7 +427,6 @@ async function handler(request, { params }) {
       return json(clean);
     }
 
-    // PATCH /audits/:id - Update audit
     if (route.startsWith('audits/') && method === 'PATCH') {
       const id = route.split('/')[1];
       const audit = await db.collection('audits').findOne({ id });
@@ -464,7 +443,6 @@ async function handler(request, { params }) {
     // ===== NOTIFICATIONS =====
     // ============================================================
 
-    // GET /notifications - List all notifications
     if (route === 'notifications' && method === 'GET') {
       const notifications = await db.collection('notifications')
         .find({})
@@ -473,7 +451,6 @@ async function handler(request, { params }) {
       return json(notifications.map(({ _id, ...rest }) => rest));
     }
 
-    // POST /notifications/mark-all-read - Mark all as read
     if (route === 'notifications/mark-all-read' && method === 'POST') {
       await db.collection('notifications').updateMany(
         { read: false },
@@ -483,7 +460,6 @@ async function handler(request, { params }) {
       return json({ ok: true });
     }
 
-    // POST /notifications/:id/read - Mark single notification as read
     if (route.startsWith('notifications/') && route.endsWith('/read') && method === 'POST') {
       const id = route.split('/')[1];
       await db.collection('notifications').updateOne({ id }, { $set: { read: true } });
@@ -494,7 +470,6 @@ async function handler(request, { params }) {
     // ===== REPORTS =====
     // ============================================================
 
-    // GET /reports - Get report data
     if (route === 'reports' && method === 'GET') {
       const [assets, allocations, bookings, maintenance] = await Promise.all([
         db.collection('assets').find({}).toArray(),
@@ -516,7 +491,6 @@ async function handler(request, { params }) {
     // ===== ACTIVITY LOGS =====
     // ============================================================
 
-    // GET /activity - List activity logs
     if (route === 'activity' && method === 'GET') {
       const logs = await db.collection('activityLogs')
         .find({})
