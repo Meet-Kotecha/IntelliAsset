@@ -1,5 +1,6 @@
 'use client';
 import { useEffect, useState, useMemo, useRef } from 'react';
+import { useTheme } from 'next-themes';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -12,7 +13,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Progress } from '@/components/ui/progress';
 import { toast } from 'sonner';
-import { LayoutDashboard, Sparkles, Package, ArrowRightLeft, Calendar, Wrench, ClipboardCheck, Building2, Users, FileBarChart, Activity, Settings, LogOut, Search, Bell, Plus, Send, TrendingUp, AlertTriangle, CheckCircle2, Clock, DollarSign, Boxes, Zap, ShieldCheck, ArrowUpRight, Bot, User as UserIcon, Filter, Trash2, RotateCcw, ChevronRight } from 'lucide-react';
+import { LayoutDashboard, Sparkles, Package, ArrowRightLeft, Calendar, Wrench, ClipboardCheck, Building2, Users, FileBarChart, Activity, Settings, LogOut, Search, Bell, Plus, Send, TrendingUp, AlertTriangle, CheckCircle2, Clock, DollarSign, Boxes, Zap, ShieldCheck, ArrowUpRight, Bot, User as UserIcon, Filter, Trash2, RotateCcw, ChevronRight, Moon, Sun } from 'lucide-react';
 import { BarChart, Bar, LineChart, Line, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip as RTooltip, ResponsiveContainer, RadialBarChart, RadialBar, Legend, AreaChart, Area } from 'recharts';
 
 const api = async (path, opts = {}) => {
@@ -164,6 +165,7 @@ function Sidebar({ active, setActive, user, onLogout }) {
 }
 
 function TopBar({ title, subtitle, notifications, user }) {
+  const { theme, setTheme } = useTheme();
   const unread = notifications?.filter(n => !n.read).length || 0;
   return (
     <div className="flex items-center justify-between mb-8">
@@ -172,6 +174,20 @@ function TopBar({ title, subtitle, notifications, user }) {
         {subtitle && <p className="text-sm text-muted-foreground mt-1">{subtitle}</p>}
       </div>
       <div className="flex items-center gap-3">
+        {/* Theme Toggle */}
+        <button
+          onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+          className="p-2 rounded-lg hover:bg-white/5 transition-colors"
+          aria-label="Toggle theme"
+        >
+          {theme === 'dark' ? (
+            <Sun className="w-5 h-5 text-yellow-400" />
+          ) : (
+            <Moon className="w-5 h-5 text-slate-600" />
+          )}
+        </button>
+
+        {/* Notification Bell */}
         <div className="relative">
           <Bell className="w-5 h-5 text-muted-foreground" />
           {unread > 0 && <span className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 rounded-full text-[10px] flex items-center justify-center">{unread}</span>}
