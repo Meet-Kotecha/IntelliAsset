@@ -5,7 +5,7 @@ export function middleware(request) {
   const path = request.nextUrl.pathname;
   
   // Public routes (anyone can access these)
-  const publicRoutes = ['/', '/login', '/signup'];
+  const publicRoutes = ['/', '/login', '/signup','/unauthorized'];
   const apiRoutes = ['/api'];
   
   if (publicRoutes.includes(path) || path.startsWith('/api')) {
